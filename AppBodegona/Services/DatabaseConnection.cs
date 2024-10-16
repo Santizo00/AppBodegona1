@@ -138,5 +138,7 @@ namespace AppBodegona.Services
             public string Uid { get; set; }
             public string Password { get; set; }
         }
+
+
     }
 }
