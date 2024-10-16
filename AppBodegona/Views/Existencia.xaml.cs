@@ -14,6 +14,7 @@ namespace AppBodegona.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class Existencia : ContentPage
     {
+
         public ObservableCollection<Producto> Productos { get; set; }
 
         public static readonly BindableProperty IdProperty =
@@ -78,7 +79,14 @@ namespace AppBodegona.Views
         // Sobrescribe el método OnBackButtonPressed
         protected override bool OnBackButtonPressed()
         {
-            // Muestra un mensaje de confirmación
+            // Verificar si hay popups abiertos
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                // Deja que el popup maneje el evento
+                return base.OnBackButtonPressed();
+            }
+
+            // Si no hay popups, ejecuta la lógica personalizada para la página
             Device.BeginInvokeOnMainThread(async () =>
             {
                 bool result = await this.DisplayAlert(
@@ -94,10 +102,10 @@ namespace AppBodegona.Views
                 }
             });
 
-            // Devuelve true para indicar que hemos manejado el evento
-            // y evitar que la aplicación cierre automáticamente
+            // Indicar que hemos manejado el evento
             return true;
         }
+
 
         public class Producto
         {
@@ -133,13 +141,17 @@ namespace AppBodegona.Views
 
         private async void BProducto(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-
-            Productos.Clear();
+            var loadingPopup = new LoadingPopup(); // Crear el popup
 
             try
             {
+                // Mostrar el popup con el spinner
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+                Productos.Clear();
+
                 if (!string.IsNullOrEmpty(eupc.Text))
                 {
                     string entryupcText = eupc.Text;
@@ -193,13 +205,14 @@ namespace AppBodegona.Views
                         }
                     }
                     query += @"
-                            ORDER BY 
-                                CASE 
-                                    WHEN Existencia > 0 THEN 1
-                                    WHEN Existencia = 0 THEN 2
-                                    ELSE 3
-                                END, 
-                                Existencia DESC";
+                    ORDER BY 
+                        CASE 
+                            WHEN Existencia > 0 THEN 1
+                            WHEN Existencia = 0 THEN 2
+                            ELSE 3
+                        END, 
+                        Existencia DESC";
+
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
                         connection.Open();
@@ -240,6 +253,11 @@ namespace AppBodegona.Views
             {
                 await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
             }
+            finally
+            {
+                // Ocultar el popup después de la búsqueda
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
+            }
         }
 
         private async void Buscar_Clicked(object sender, EventArgs e)
@@ -259,9 +277,10 @@ namespace AppBodegona.Views
                 Contenedor.IsVisible = false;
                 ResultadosListView.IsVisible = true;
 
-                BProducto(sender, e);
+                BProducto(sender, e); // Llama a BProducto para realizar la búsqueda
             }
         }
+
 
         private async void ValidarNiv1(double costoProducto, string nivel1String, string precio1String, string existenciaString, string precioString, string descLarga)
         {
@@ -1408,14 +1427,36 @@ namespace AppBodegona.Views
             }
         }
 
-        private void VerProducto_Clicked(object sender, EventArgs e)
+        private async void VerProducto_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-            Img.IsVisible = false;
-            VerProducto(sender, e);
+            var loadingPopup = new LoadingPopup(); // Crear la instancia del popup
 
+            try
+            {
+                // Mostrar el popup de carga
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                // Resetear el temporizador de inactividad
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+
+                // Ocultar imagen (Img)
+                Img.IsVisible = false;
+
+                // Llamar a VerProducto (asegúrate que sea un método válido y asíncrono si corresponde)
+                VerProducto(sender, e);
+            }
+            catch (Exception ex)
+            {
+                await Application.Current.MainPage.DisplayAlert("Error", $"Se produjo un error: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ocultar el popup después de completar la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
+            }
         }
+
 
 
         private void Button_Focused(object sender, FocusEventArgs e)
@@ -1508,32 +1549,49 @@ namespace AppBodegona.Views
             }
         }
 
-
         private async void VF_Clicked(object sender, EventArgs e)
         {
-            string FamiliaID = Familia.Text;
+            var loadingPopup = new LoadingPopup(); // Crear la instancia del popup
 
-            string query = $"SELECT UPC, DescLarga FROM productos WHERE GruposProductosId = {FamiliaID}";
-            List<string> productosList = new List<string>();
-
-            using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+            try
             {
-                connection.Open();
-                using (MySqlCommand command = new MySqlCommand(query, connection))
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                string FamiliaID = Familia.Text;
+                string query = $"SELECT UPC, DescLarga FROM productos WHERE GruposProductosId = {FamiliaID}";
+                List<string> productosList = new List<string>();
+
+                using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                 {
-                    using (MySqlDataReader reader = command.ExecuteReader())
+                    connection.Open();
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        while (reader.Read())
+                        using (MySqlDataReader reader = command.ExecuteReader())
                         {
-                            productosList.Add($"UPC: {reader["Upc"]}\nDescLarga: {reader["DescLarga"]} \n");
+                            while (reader.Read())
+                            {
+                                productosList.Add($"UPC: {reader["Upc"]}\nDescLarga: {reader["DescLarga"]} \n");
+                            }
                         }
                     }
                 }
+
+                string productosMensaje = string.Join("\n", productosList);
+
+                // Mostrar alerta con los resultados
+                await DisplayAlert("Productos de Familia:", productosMensaje, "Aceptar");
             }
-            string productosMensaje = string.Join("\n", productosList);
-            await DisplayAlert("Productos de Familia:", productosMensaje, "Aceptar");
+            catch (Exception ex)
+            {
+                // En caso de error, mostrar una alerta con el mensaje
+                await DisplayAlert("Error", $"Se produjo un error: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ocultar el spinner al finalizar la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
+            }
         }
-
-
     }
 }

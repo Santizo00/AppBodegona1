@@ -70,7 +70,14 @@ namespace AppBodegona.Views
         // Sobrescribe el método OnBackButtonPressed
         protected override bool OnBackButtonPressed()
         {
-            // Muestra un mensaje de confirmación
+            // Verificar si hay popups abiertos
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                // Deja que el popup maneje el evento
+                return base.OnBackButtonPressed();
+            }
+
+            // Si no hay popups, ejecuta la lógica personalizada para la página
             Device.BeginInvokeOnMainThread(async () =>
             {
                 bool result = await this.DisplayAlert(
@@ -86,8 +93,7 @@ namespace AppBodegona.Views
                 }
             });
 
-            // Devuelve true para indicar que hemos manejado el evento
-            // y evitar que la aplicación cierre automáticamente
+            // Indicar que hemos manejado el evento
             return true;
         }
 
@@ -157,115 +163,137 @@ namespace AppBodegona.Views
             ResultadosListView.IsVisible = false;
         }
 
-        private void BProducto(object sender, EventArgs e)
+        private async void BProducto(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(eupc.Text))
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
+
+            try
             {
-                string entryupcText = eupc.Text;
+                // Mostrar el spinner al inicio de la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
-                if (entryupcText.Length < 13)
+                if (!string.IsNullOrEmpty(eupc.Text))
                 {
-                    int cerosToAdd = 13 - entryupcText.Length;
-                    entryupcText = new string('0', cerosToAdd) + entryupcText;
-                }
+                    string entryupcText = eupc.Text;
 
-                string query = $"SELECT Upc, Precio, DescLarga, Nivel1, PrecioMaxNivel1, Existencia FROM productos WHERE Upc = '{entryupcText}'";
-
-                try
-                {
-                    using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+                    if (entryupcText.Length < 13)
                     {
-                        connection.Open();
-                        using (MySqlCommand command = new MySqlCommand(query, connection))
+                        int cerosToAdd = 13 - entryupcText.Length;
+                        entryupcText = new string('0', cerosToAdd) + entryupcText;
+                    }
+
+                    string query = $"SELECT Upc, Precio, DescLarga, Nivel1, PrecioMaxNivel1, Existencia FROM productos WHERE Upc = '{entryupcText}'";
+
+                    try
+                    {
+                        using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                         {
-                            using (MySqlDataReader reader = command.ExecuteReader())
+                            connection.Open();
+                            using (MySqlCommand command = new MySqlCommand(query, connection))
                             {
-                                if (reader.Read())
+                                using (MySqlDataReader reader = command.ExecuteReader())
                                 {
-                                    Productos.Add(new Producto
+                                    if (reader.Read())
                                     {
-                                        Upc = reader["Upc"].ToString(),
-                                        DescLarga = reader["DescLarga"].ToString(),
-                                        Existencia = reader["Existencia"].ToString(),
-                                        Precio = reader["Precio"].ToString()
-                                    });
-                                }
-                                else
-                                {
-                                    DisplayAlert("Alerta", "Producto no encontrado.", "Aceptar");
+                                        Productos.Add(new Producto
+                                        {
+                                            Upc = reader["Upc"].ToString(),
+                                            DescLarga = reader["DescLarga"].ToString(),
+                                            Existencia = reader["Existencia"].ToString(),
+                                            Precio = reader["Precio"].ToString()
+                                        });
+                                    }
+                                    else
+                                    {
+                                        await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync(); // Ocultar el spinner
+                                        await DisplayAlert("Alerta", "Producto no encontrado.", "Aceptar");
+                                        return;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
-                }
-            }
-            else if (!string.IsNullOrEmpty(edescripcion.Text))
-            {
-                string entryDescText = edescripcion.Text;
-                string[] searchTerms = entryDescText.Split(' ');
-                string query = "SELECT Upc, Precio, Nivel1, PrecioMaxNivel1, DescLarga, Existencia FROM productos WHERE ";
-
-                for (int i = 0; i < searchTerms.Length; i++)
-                {
-                    query += $"DescLarga LIKE @searchTerm{i}";
-                    if (i < searchTerms.Length - 1)
+                    catch (Exception ex)
                     {
-                        query += " AND ";
+                        await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync(); // Ocultar el spinner
+                        await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+                        return;
                     }
                 }
-                query += @"
-                        ORDER BY 
-                            CASE 
-                                WHEN Existencia > 0 THEN 1
-                                WHEN Existencia = 0 THEN 2
-                                ELSE 3
-                            END, 
-                            Existencia DESC";
-
-                try
+                else if (!string.IsNullOrEmpty(edescripcion.Text))
                 {
-                    using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+                    string entryDescText = edescripcion.Text;
+                    string[] searchTerms = entryDescText.Split(' ');
+                    string query = "SELECT Upc, Precio, Nivel1, PrecioMaxNivel1, DescLarga, Existencia FROM productos WHERE ";
+
+                    for (int i = 0; i < searchTerms.Length; i++)
                     {
-                        connection.Open();
-                        using (MySqlCommand command = new MySqlCommand(query, connection))
+                        query += $"DescLarga LIKE @searchTerm{i}";
+                        if (i < searchTerms.Length - 1)
                         {
-                            for (int i = 0; i < searchTerms.Length; i++)
+                            query += " AND ";
+                        }
+                    }
+                    query += @"
+                ORDER BY 
+                    CASE 
+                        WHEN Existencia > 0 THEN 1
+                        WHEN Existencia = 0 THEN 2
+                        ELSE 3
+                    END, 
+                    Existencia DESC";
+
+                    try
+                    {
+                        using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+                        {
+                            connection.Open();
+                            using (MySqlCommand command = new MySqlCommand(query, connection))
                             {
-                                command.Parameters.AddWithValue($"@searchTerm{i}", "%" + searchTerms[i] + "%");
-                            }
-                            using (MySqlDataReader reader = command.ExecuteReader())
-                            {
-                                Productos.Clear();
-                                while (reader.Read())
+                                for (int i = 0; i < searchTerms.Length; i++)
                                 {
-                                    Productos.Add(new Producto
-                                    {
-                                        Upc = reader["Upc"].ToString(),
-                                        DescLarga = reader["DescLarga"].ToString(),
-                                        Existencia = reader["Existencia"].ToString(),
-                                        Precio = reader["Precio"].ToString()
-                                    });
+                                    command.Parameters.AddWithValue($"@searchTerm{i}", "%" + searchTerms[i] + "%");
                                 }
-                                if (Productos.Count == 0)
+                                using (MySqlDataReader reader = command.ExecuteReader())
                                 {
-                                    DisplayAlert("Alerta", "No se encontraron productos con esa descripción.", "Aceptar");
+                                    Productos.Clear();
+                                    while (reader.Read())
+                                    {
+                                        Productos.Add(new Producto
+                                        {
+                                            Upc = reader["Upc"].ToString(),
+                                            DescLarga = reader["DescLarga"].ToString(),
+                                            Existencia = reader["Existencia"].ToString(),
+                                            Precio = reader["Precio"].ToString()
+                                        });
+                                    }
+                                    if (Productos.Count == 0)
+                                    {
+                                        await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync(); // Ocultar el spinner
+                                        await DisplayAlert("Alerta", "No se encontraron productos con esa descripción.", "Aceptar");
+                                        return;
+                                    }
                                 }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync(); // Ocultar el spinner
+                        await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+                        return;
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+                    await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync(); // Ocultar el spinner
+                    await DisplayAlert("Alerta", "No hay datos para buscar.", "Aceptar");
                 }
             }
-            else
+            finally
             {
-                DisplayAlert("Alerta", "No hay datos para buscar.", "Aceptar");
+                // Asegurarse de ocultar el spinner en todos los casos
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
@@ -334,21 +362,25 @@ namespace AppBodegona.Views
             edescripcion.Text = "";
         }
 
-        private void VerProducto(object sender, EventArgs e)
+        private async void VerProducto(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-            if (sender is Button button && button.BindingContext is Producto producto)
+            var loadingPopup = new LoadingPopup();
+            await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+            try
             {
-                string upc = producto.Upc;
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
 
-                VistaBusqueda.IsVisible = false;
-                VistaCambio.IsVisible = true;
-
-                string query = $"SELECT DescLarga, Precio, Costo, Margen, Nivel1, PrecioMaxNivel1, Margen1, Nivel2, PrecioMaxNivel2, Margen2, GruposProductosId FROM productos WHERE Upc = '{upc}'";
-
-                try
+                if (sender is Button button && button.BindingContext is Producto producto)
                 {
+                    string upc = producto.Upc;
+
+                    VistaBusqueda.IsVisible = false;
+                    VistaCambio.IsVisible = true;
+
+                    string query = $"SELECT DescLarga, Precio, Costo, Margen, Nivel1, PrecioMaxNivel1, Margen1, Nivel2, PrecioMaxNivel2, Margen2, GruposProductosId FROM productos WHERE Upc = '{upc}'";
+
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
                         connection.Open();
@@ -358,33 +390,19 @@ namespace AppBodegona.Views
                             {
                                 if (reader.Read())
                                 {
-                                    string descLarga = reader["DescLarga"].ToString();
-                                    decimal precio = Convert.ToDecimal(reader["Precio"]);
-                                    decimal costo = Convert.ToDecimal(reader["Costo"]);
-                                    decimal margen = Convert.ToDecimal(reader["Margen"]);
-
-                                    int nivel1 = Convert.ToInt32(reader["Nivel1"]);
-                                    decimal precio1 = Convert.ToDecimal(reader["PrecioMaxNivel1"]);
-                                    decimal margen1 = Convert.ToDecimal(reader["Margen1"]);
-
-                                    int nivel2 = Convert.ToInt32(reader["Nivel2"]);
-                                    decimal precio2 = Convert.ToDecimal(reader["PrecioMaxNivel2"]);
-                                    decimal margen2 = Convert.ToDecimal(reader["Margen2"]);
-
-
                                     upcc.Text = upc;
-                                    descripcionc.Text = descLarga;
-                                    costoc.Text = costo.ToString("F2");
-                                    precioc.Text = precio.ToString("F2");
-                                    margenc.Text = margen.ToString("F2");
+                                    descripcionc.Text = reader["DescLarga"].ToString();
+                                    costoc.Text = Convert.ToDecimal(reader["Costo"]).ToString("F2");
+                                    precioc.Text = Convert.ToDecimal(reader["Precio"]).ToString("F2");
+                                    margenc.Text = Convert.ToDecimal(reader["Margen"]).ToString("F2");
 
-                                    N1.Text = nivel1.ToString();
-                                    P1.Text = precio1.ToString("F2");
-                                    M1.Text = margen1.ToString("F2");
+                                    N1.Text = reader["Nivel1"].ToString();
+                                    P1.Text = Convert.ToDecimal(reader["PrecioMaxNivel1"]).ToString("F2");
+                                    M1.Text = Convert.ToDecimal(reader["Margen1"]).ToString("F2");
 
-                                    N2.Text = nivel2.ToString();
-                                    P2.Text = precio2.ToString("F2");
-                                    M2.Text = margen2.ToString("F2");
+                                    N2.Text = reader["Nivel2"].ToString();
+                                    P2.Text = Convert.ToDecimal(reader["PrecioMaxNivel2"]).ToString("F2");
+                                    M2.Text = Convert.ToDecimal(reader["Margen2"]).ToString("F2");
 
                                     Img.IsVisible = false;
                                 }
@@ -392,26 +410,33 @@ namespace AppBodegona.Views
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
-                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+            }
+            finally
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
         private async void VerFamilia(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-            Img.IsVisible = false;
+            var loadingPopup = new LoadingPopup();
+            await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
-            if (sender is Button button && button.BindingContext is Producto producto)
+            try
             {
-                string upc = producto.Upc;
-                string query = $"SELECT GruposProductosId FROM productos WHERE Upc = '{upc}'";
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+                Img.IsVisible = false;
 
-                try
+                if (sender is Button button && button.BindingContext is Producto producto)
                 {
+                    string upc = producto.Upc;
+                    string query = $"SELECT GruposProductosId FROM productos WHERE Upc = '{upc}'";
+
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
                         connection.Open();
@@ -425,54 +450,7 @@ namespace AppBodegona.Views
 
                                     if (gruposProductosId > 0)
                                     {
-                                        string query1 = $"SELECT Id, Nombre, PrecioNormal, Costo, Margen, Nivel1, PrecioMaxNivel1, Margen1, Nivel2, PrecioMaxNivel2, Margen2 FROM gruposproductos WHERE Id = '{gruposProductosId}'";
-
-                                        using (MySqlConnection connection1 = new MySqlConnection(DatabaseConnection.ConnectionString))
-                                        {
-                                            connection1.Open();
-                                            using (MySqlCommand command1 = new MySqlCommand(query1, connection1))
-                                            {
-                                                using (MySqlDataReader reader1 = command1.ExecuteReader())
-                                                {
-                                                    if (reader1.Read())
-                                                    {
-                                                        string id = reader1["Id"].ToString();
-                                                        string nombre = reader1["Nombre"].ToString();
-                                                        decimal precioNormal = Convert.ToDecimal(reader1["PrecioNormal"]);
-                                                        decimal costo = Convert.ToDecimal(reader1["Costo"]);
-                                                        decimal margen = Convert.ToDecimal(reader1["Margen"]);
-
-                                                        int nivel1 = Convert.ToInt32(reader1["Nivel1"]);
-                                                        decimal precioMaxNivel1 = Convert.ToDecimal(reader1["PrecioMaxNivel1"]);
-                                                        decimal margen1 = Convert.ToDecimal(reader1["Margen1"]);
-
-                                                        int nivel2 = Convert.ToInt32(reader1["Nivel2"]);
-                                                        decimal precioMaxNivel2 = Convert.ToDecimal(reader1["PrecioMaxNivel2"]);
-                                                        decimal margen2 = Convert.ToDecimal(reader1["Margen2"]);
-
-                                                        upcc.Text = id;
-                                                        descripcionc.Text = nombre;
-                                                        costoc.Text = costo.ToString("F2");
-                                                        precioc.Text = precioNormal.ToString("F2");
-                                                        margenc.Text = margen.ToString("F2");
-
-                                                        N1.Text = nivel1.ToString();
-                                                        P1.Text = precioMaxNivel1.ToString("F2");
-                                                        M1.Text = margen1.ToString("F2");
-
-                                                        N2.Text = nivel2.ToString();
-                                                        P2.Text = precioMaxNivel2.ToString("F2");
-                                                        M2.Text = margen2.ToString("F2");
-
-                                                        VistaBusqueda.IsVisible = false;
-                                                        VistaCambio.IsVisible = true;
-
-                                                        // Llamada a la nueva función para buscar productos por familia
-                                                        BuscarProductosPorFamilia(gruposProductosId);
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        await BuscarProductosPorFamilia(gruposProductosId);
                                     }
                                     else
                                     {
@@ -487,19 +465,26 @@ namespace AppBodegona.Views
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
-                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+            }
+            finally
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
-        private async void BuscarProductosPorFamilia(int gruposProductosId)
+        private async Task BuscarProductosPorFamilia(int gruposProductosId)
         {
-            string query = $"SELECT Upc FROM productos WHERE GruposProductosId = {gruposProductosId}";
+            var loadingPopup = new LoadingPopup();
+            await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
             try
             {
+                string query = $"SELECT Upc FROM productos WHERE GruposProductosId = {gruposProductosId}";
+
                 using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                 {
                     connection.Open();
@@ -507,18 +492,13 @@ namespace AppBodegona.Views
                     {
                         using (MySqlDataReader reader = command.ExecuteReader())
                         {
-                            UpcList.Clear(); // Limpiar la lista antes de agregar nuevos elementos
+                            UpcList.Clear();
                             while (reader.Read())
                             {
-                                string upc = reader["Upc"].ToString();
-                                UpcList.Add(upc);
+                                UpcList.Add(reader["Upc"].ToString());
                             }
 
-                            if (UpcList.Count > 0)
-                            {
-                                string upcMessage = string.Join(", ", UpcList);
-                            }
-                            else
+                            if (UpcList.Count == 0)
                             {
                                 await DisplayAlert("Información", "No se encontraron productos para esta familia.", "Aceptar");
                             }
@@ -528,7 +508,11 @@ namespace AppBodegona.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+                await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+            }
+            finally
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
@@ -632,247 +616,171 @@ namespace AppBodegona.Views
 
         private async void Guardar_Clicked(object sender, EventArgs e)
         {
-            CalcularPrecioyMargen();
+            var loadingPopup = new LoadingPopup();
+            await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-
-            string upc = upcc.Text;
-            string precioString = precioc.Text;
-            string margenString = margenc.Text;
-
-            string nivel1String = N1.Text;
-            string precio1String = P1.Text;
-            string margen1String = M1.Text;
-
-            string nivel2String = N2.Text;
-            string precio2String = P2.Text;
-            string margen2String = M2.Text;
-
-            if (string.IsNullOrWhiteSpace(upc) ||
-                string.IsNullOrWhiteSpace(precioString) ||
-                string.IsNullOrWhiteSpace(margenString) ||
-                string.IsNullOrWhiteSpace(nivel1String) ||
-                string.IsNullOrWhiteSpace(precio1String) ||
-                string.IsNullOrWhiteSpace(margen1String) ||
-                string.IsNullOrWhiteSpace(nivel2String) ||
-                string.IsNullOrWhiteSpace(precio2String) ||
-                string.IsNullOrWhiteSpace(margen2String))
+            try
             {
-                await DisplayAlert("Error", "Todos los campos deben estar completos", "OK");
-                return;
-            }
+                CalcularPrecioyMargen();
 
-            int nivel1, nivel2;
-            decimal precio, margen, precio1, margen1, precio2, margen2;
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
 
-            nivel1 = nivel2 = 0;
-            precio = margen = precio1 = margen1 = precio2 = margen2 = 0m;
+                string upc = upcc.Text;
+                string precioString = precioc.Text;
+                string margenString = margenc.Text;
 
-            if (decimal.TryParse(precioString, out precio) &&
-                decimal.TryParse(margen1String, out margen))
-            {
-                if ((precio <= 0))
+                string nivel1String = N1.Text;
+                string precio1String = P1.Text;
+                string margen1String = M1.Text;
+
+                string nivel2String = N2.Text;
+                string precio2String = P2.Text;
+                string margen2String = M2.Text;
+
+                if (string.IsNullOrWhiteSpace(upc) ||
+                    string.IsNullOrWhiteSpace(precioString) ||
+                    string.IsNullOrWhiteSpace(margenString) ||
+                    string.IsNullOrWhiteSpace(nivel1String) ||
+                    string.IsNullOrWhiteSpace(precio1String) ||
+                    string.IsNullOrWhiteSpace(margen1String) ||
+                    string.IsNullOrWhiteSpace(nivel2String) ||
+                    string.IsNullOrWhiteSpace(precio2String) ||
+                    string.IsNullOrWhiteSpace(margen2String))
+                {
+                    await DisplayAlert("Error", "Todos los campos deben estar completos", "OK");
+                    return;
+                }
+
+                int nivel1, nivel2;
+                decimal precio, margen, precio1, margen1, precio2, margen2;
+
+                if (!decimal.TryParse(precioString, out precio) ||
+                    !decimal.TryParse(margenString, out margen) ||
+                    !int.TryParse(nivel1String, out nivel1) ||
+                    !decimal.TryParse(precio1String, out precio1) ||
+                    !decimal.TryParse(margen1String, out margen1) ||
+                    !int.TryParse(nivel2String, out nivel2) ||
+                    !decimal.TryParse(precio2String, out precio2) ||
+                    !decimal.TryParse(margen2String, out margen2))
+                {
+                    await DisplayAlert("Error", "Por favor, ingrese valores válidos", "OK");
+                    return;
+                }
+
+                if (precio <= 0)
                 {
                     await DisplayAlert("Error", "El precio principal no puede ser 0", "OK");
                     return;
                 }
-            }
 
-            if (int.TryParse(nivel1String, out nivel1) &&
-                decimal.TryParse(precio1String, out precio1) &&
-                decimal.TryParse(margen1String, out margen1))
-            {
                 if ((nivel1 > 0 || precio1 > 0 || margen1 > 0) && (nivel1 == 0 || precio1 == 0 || margen1 == 0))
                 {
                     await DisplayAlert("Error", "Los campos del Nivel 1 no pueden quedar a 0", "OK");
                     return;
                 }
-            }
 
-            if (int.TryParse(nivel2String, out nivel2) &&
-                decimal.TryParse(precio2String, out precio2) &&
-                decimal.TryParse(margen2String, out margen2))
-            {
                 if ((nivel2 > 0 || precio2 > 0 || margen2 > 0) && (nivel2 == 0 || precio2 == 0 || margen2 == 0))
                 {
                     await DisplayAlert("Error", "Los campos del Nivel 2 no pueden quedar a 0", "OK");
                     return;
                 }
-            }
 
-            if (margen < 0 || margen1 < 0 || margen2 < 0)
-            {
-                bool continueWithNegativeMargins = await DisplayAlert("Advertencia", "Uno o más márgenes son negativos. ¿Desea continuar?", "Sí", "No");
-                if (!continueWithNegativeMargins)
+                if (margen < 0 || margen1 < 0 || margen2 < 0)
                 {
-                    return;
+                    bool continueWithNegativeMargins = await DisplayAlert("Advertencia", "Uno o más márgenes son negativos. ¿Desea continuar?", "Sí", "No");
+                    if (!continueWithNegativeMargins)
+                    {
+                        return;
+                    }
                 }
-            }
 
-            if (nivel1 == 0 || nivel2 == 0)
-            {
-
-            }
-            else
-            {
-                if (nivel1 >= nivel2)
+                if (nivel1 != 0 && nivel2 != 0 && nivel1 >= nivel2)
                 {
-
                     await DisplayAlert("Error", "El nivel 2 debe de ser mayor al nivel 1", "OK");
                     return;
                 }
-            }
 
-            if (precio1 == 0 || precio2 == 0)
-            {
-
-            }
-            else
-            {
-                if (precio1 <= precio2)
+                if (precio1 != 0 && precio2 != 0 && precio1 <= precio2)
                 {
                     await DisplayAlert("Error", "El precio del nivel 2 debe ser menor al precio de nivel 1", "OK");
                     return;
                 }
 
-            }
+                bool isGroupProduct = upc.Length < 13;
+                bool success = false;
 
-
-            bool isGroupProduct = upc.Length < 13;
-            bool success = false;
-
-            if (decimal.TryParse(precioString, out precio) &&
-                decimal.TryParse(margenString, out margen))
-            {
-                string query;
-                if (isGroupProduct)
-                {
-                    query = @"UPDATE gruposproductos SET 
-                    PrecioNormal = @Precio,
-                    Margen = @Margen,
-                    Nivel1 = @Nivel1, 
-                    PrecioMaxNivel1 = @Precio1, 
-                    Margen1 = @Margen1, 
-                    Nivel2 = @Nivel2, 
-                    PrecioMaxNivel2 = @Precio2, 
-                    Margen2 = @Margen2
-                    WHERE Id = @Upc";
-                }
-                else
-                {
-                    query = @"UPDATE productos SET 
-                    Precio = @Precio, 
-                    Margen = @Margen, 
-                    Nivel1 = @Nivel1, 
-                    PrecioMaxNivel1 = @Precio1, 
-                    Margen1 = @Margen1, 
-                    Nivel2 = @Nivel2, 
-                    PrecioMaxNivel2 = @Precio2, 
-                    Margen2 = @Margen2
-                    WHERE Upc = @Upc";
-                }
+                string query = isGroupProduct ?
+                    @"UPDATE gruposproductos SET PrecioNormal = @Precio, Margen = @Margen, Nivel1 = @Nivel1, PrecioMaxNivel1 = @Precio1, Margen1 = @Margen1, Nivel2 = @Nivel2, PrecioMaxNivel2 = @Precio2, Margen2 = @Margen2 WHERE Id = @Upc" :
+                    @"UPDATE productos SET Precio = @Precio, Margen = @Margen, Nivel1 = @Nivel1, PrecioMaxNivel1 = @Precio1, Margen1 = @Margen1, Nivel2 = @Nivel2, PrecioMaxNivel2 = @Precio2, Margen2 = @Margen2 WHERE Upc = @Upc";
 
                 ValidarCambios();
-                try
+
+                using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                 {
-                    using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+                    connection.Open();
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        connection.Open();
-                        using (MySqlCommand command = new MySqlCommand(query, connection))
+                        command.Parameters.AddWithValue("@Precio", precio);
+                        command.Parameters.AddWithValue("@Margen", margen);
+                        command.Parameters.AddWithValue("@Nivel1", nivel1);
+                        command.Parameters.AddWithValue("@Precio1", precio1);
+                        command.Parameters.AddWithValue("@Margen1", margen1);
+                        command.Parameters.AddWithValue("@Nivel2", nivel2);
+                        command.Parameters.AddWithValue("@Precio2", precio2);
+                        command.Parameters.AddWithValue("@Margen2", margen2);
+                        command.Parameters.AddWithValue("@Upc", upc);
+
+                        int result = command.ExecuteNonQuery();
+                        success = result > 0;
+
+                        if (isGroupProduct && success)
                         {
-                            command.Parameters.AddWithValue("@Precio", precio);
-                            command.Parameters.AddWithValue("@Margen", margen);
-                            command.Parameters.AddWithValue("@Nivel1", nivel1);
-                            command.Parameters.AddWithValue("@Precio1", precio1);
-                            command.Parameters.AddWithValue("@Margen1", margen1);
-                            command.Parameters.AddWithValue("@Nivel2", nivel2);
-                            command.Parameters.AddWithValue("@Precio2", precio2);
-                            command.Parameters.AddWithValue("@Margen2", margen2);
-                            command.Parameters.AddWithValue("@Upc", upc);
-
-                            int result = command.ExecuteNonQuery();
-
-                            if (result > 0)
+                            string updateProductosQuery = @"UPDATE productos SET Precio = @NuevoPrecio, Margen = @NuevoMargen, Nivel1 = @Nivel1, PrecioMaxNivel1 = @Precio1, Margen1 = @Margen1, Nivel2 = @Nivel2, PrecioMaxNivel2 = @Precio2, Margen2 = @Margen2 WHERE GruposProductosId = @Upc";
+                            using (MySqlCommand updateCommand = new MySqlCommand(updateProductosQuery, connection))
                             {
-                                success = true;
+                                updateCommand.Parameters.AddWithValue("@NuevoPrecio", precio);
+                                updateCommand.Parameters.AddWithValue("@NuevoMargen", margen);
+                                updateCommand.Parameters.AddWithValue("@Nivel1", nivel1);
+                                updateCommand.Parameters.AddWithValue("@Precio1", precio1);
+                                updateCommand.Parameters.AddWithValue("@Margen1", margen1);
+                                updateCommand.Parameters.AddWithValue("@Nivel2", nivel2);
+                                updateCommand.Parameters.AddWithValue("@Precio2", precio2);
+                                updateCommand.Parameters.AddWithValue("@Margen2", margen2);
+                                updateCommand.Parameters.AddWithValue("@Upc", upc);
 
-                                // Si el producto pertenece a una familia, actualiza la familia y los productos de la familia
-                                if (isGroupProduct)
-                                {
-                                    string queryUpdateProductos = @"UPDATE productos SET 
-                                Precio = @NuevoPrecio, 
-                                Margen = @NuevoMargen,
-                                Nivel1 = @Nivel1,
-                                PrecioMaxNivel1 = @Precio1,
-                                Margen1 = @Margen1,
-                                Nivel2 = @Nivel2,
-                                PrecioMaxNivel2 = @Precio2,
-                                Margen2 = @Margen2
-                                WHERE GruposProductosId = @Upc";
-
-                                    using (MySqlCommand commandUpdate = new MySqlCommand(queryUpdateProductos, connection))
-                                    {
-                                        commandUpdate.Parameters.AddWithValue("@NuevoPrecio", precio);
-                                        commandUpdate.Parameters.AddWithValue("@NuevoMargen", margen);
-                                        commandUpdate.Parameters.AddWithValue("@Nivel1", nivel1);
-                                        commandUpdate.Parameters.AddWithValue("@Precio1", precio1);
-                                        commandUpdate.Parameters.AddWithValue("@Margen1", margen1);
-                                        commandUpdate.Parameters.AddWithValue("@Nivel2", nivel2);
-                                        commandUpdate.Parameters.AddWithValue("@Precio2", precio2);
-                                        commandUpdate.Parameters.AddWithValue("@Margen2", margen2);
-                                        commandUpdate.Parameters.AddWithValue("@Upc", upc);
-
-                                        commandUpdate.ExecuteNonQuery();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                await DisplayAlert("Error", "No se pudo actualizar", "OK");
+                                updateCommand.ExecuteNonQuery();
                             }
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
-                }
-            }
-            else
-            {
-                await DisplayAlert("Error", "Por favor, ingrese valores válidos", "OK");
-            }
 
-            if (success)
-            {
-                if (isGroupProduct)
+                if (success)
                 {
-                    await DisplayAlert("Éxito", "Familia y productos actualizados correctamente", "OK");
+                    string message = isGroupProduct ? "Familia y productos actualizados correctamente" : "Producto actualizado correctamente";
+                    await DisplayAlert("Éxito", message, "OK");
                 }
                 else
                 {
-                    await DisplayAlert("Éxito", "Producto actualizado correctamente", "OK");
+                    await DisplayAlert("Error", "No se pudo actualizar", "OK");
                 }
             }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+            }
+            finally
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
 
-            upcc.Text = null;
-            descripcionc.Text = null;
-            costoc.Text = null;
-            precioc.Text = null;
-            margenc.Text = null;
-            N1.Text = null;
-            P1.Text = null;
-            M1.Text = null;
-            N2.Text = null;
-            P2.Text = null;
-            M2.Text = null;
+                upcc.Text = descripcionc.Text = costoc.Text = precioc.Text = margenc.Text = null;
+                N1.Text = P1.Text = M1.Text = N2.Text = P2.Text = M2.Text = null;
 
-            VistaCambio.IsVisible = false;
-            VistaBusqueda.IsVisible = true;
-            Img.IsVisible = false;
+                VistaCambio.IsVisible = false;
+                VistaBusqueda.IsVisible = true;
+                Img.IsVisible = false;
+            }
         }
-
 
         public class HistorialCambiosHelper
         {

@@ -20,6 +20,7 @@
                        Placeholder="Ingrese la IP a conectar!"
                        PlaceholderColor="#FFF"
                        TextColor="#FFF"
+                       Completed="Text_Completed"
                        Grid.Column="1"
                        Grid.Row="0"/>
 
@@ -29,6 +30,7 @@
                        Placeholder="Ingrese el puerto!"
                        PlaceholderColor="#FFF"
                        TextColor="#FFF"
+                       Completed="Text_Completed"
                        Grid.Column="1"
                        Grid.Row="1"/>
 
@@ -38,6 +40,7 @@
                        Placeholder="Ingrese el nombre de la base de datos!"
                        PlaceholderColor="#FFF"
                        TextColor="#FFF"
+                       Completed="Text_Completed"
                        Grid.Column="1"
                        Grid.Row="2"/>
 
@@ -47,6 +50,7 @@
                        Placeholder="Ingrese el usuario!"
                        PlaceholderColor="#FFF"
                        TextColor="#FFF"
+                       Completed="Text_Completed"
                        Grid.Column="1"
                        Grid.Row="3"/>
 
@@ -56,20 +60,21 @@
                        Placeholder="Ingrese la contraseña!"
                        PlaceholderColor="#FFF"
                        IsPassword="True"
+                       Completed="Text_Completed"
                        TextColor="#FFF"
                        Grid.Column="1"
                        Grid.Row="4"/>
             </Grid>
             <Grid Margin="20,0,20,0">
                 <Button x:Name="Back" 
-                        FontFamily="fontello1"
-                        Text="Regresar"
+                        FontFamily="fontello"
+                        Text="Regresar   &#xE805;"
                         WidthRequest="150"
                         Grid.Column="0"
                         Clicked="Back_Clicked"/>
 
                 <Button x:Name="Save"
-                        FontFamily="fontello1"
+                        FontFamily="fontello"
                         Text="Guardar   &#xE807;"
                         WidthRequest="150"
                         Grid.Column="1"

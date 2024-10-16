@@ -4,6 +4,8 @@ using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 using MySqlConnector;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace AppBodegona.Views
 {
@@ -14,7 +16,14 @@ namespace AppBodegona.Views
         // Sobrescribe el método OnBackButtonPressed
         protected override bool OnBackButtonPressed()
         {
-            // Muestra un mensaje de confirmación
+            // Verificar si hay popups abiertos
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                // Deja que el popup maneje el evento
+                return base.OnBackButtonPressed();
+            }
+
+            // Si no hay popups, ejecuta la lógica personalizada para la página
             Device.BeginInvokeOnMainThread(async () =>
             {
                 bool result = await this.DisplayAlert(
@@ -30,8 +39,7 @@ namespace AppBodegona.Views
                 }
             });
 
-            // Devuelve true para indicar que hemos manejado el evento
-            // y evitar que la aplicación cierre automáticamente
+            // Indicar que hemos manejado el evento
             return true;
         }
 
@@ -61,35 +69,58 @@ namespace AppBodegona.Views
             Save.Clicked += Save_Clicked;
         }
 
-        private async void Save_Clicked(object sender, EventArgs e)
+        private void Save_Clicked(object sender, EventArgs e)
         {
-            // Asigna los valores de las entradas a las variables públicas
-            ServerAddress = Server.Text;
-            PortNumber = Port.Text;
-            DatabaseName = Database.Text;
-            Username = User.Text;
-            Password = Pass.Text;
+            Guardar();
+        }
 
-            // Probar la conexión antes de guardar
-            var connectionString = $"Server={ServerAddress};Port={PortNumber};Database={DatabaseName};Uid={Username};Pwd={Password};";
-            if (DatabaseConnection.TestConnection(connectionString))
+        public async void Guardar()
+        {
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
+
+            try
             {
-                // Actualiza la cadena de conexión globalmente
-                DatabaseConnection.UpdateConnectionString(ServerAddress, PortNumber, DatabaseName, Username, Password);
+                // Mostrar el spinner al inicio
+                if (!Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Contains(loadingPopup))
+                {
+                    await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+                }
 
-                // Guarda las preferencias
-                SavePreferences();
+                // Asigna los valores de las entradas a las variables públicas
+                ServerAddress = Server.Text;
+                PortNumber = Port.Text;
+                DatabaseName = Database.Text;
+                Username = User.Text;
+                Password = Pass.Text;
 
-                TipoSucursal();
+                // Probar la conexión antes de guardar
+                var connectionString = $"Server={ServerAddress};Port={PortNumber};Database={DatabaseName};Uid={Username};Pwd={Password};";
+                if (DatabaseConnection.TestConnection(connectionString))
+                {
+                    // Actualiza la cadena de conexión globalmente
+                    DatabaseConnection.UpdateConnectionString(ServerAddress, PortNumber, DatabaseName, Username, Password);
+
+                    // Guarda las preferencias
+                    SavePreferences();
+
+                    // Ejecutar TipoSucursal
+                    await TipoSucursal();
+                }
+                else
+                {
+                    // Ocultar el spinner antes de mostrar el mensaje
+                    await CerrarPopupSiEstaAbierto();
+                    await DisplayAlert("Error", "No se pudo conectar a la base de datos. Por favor, verifique los datos ingresados.", "OK");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Muestra un mensaje de error
-                await DisplayAlert("Error", "No se pudo conectar a la base de datos. Por favor, verifique los datos ingresados.", "OK");
+                await CerrarPopupSiEstaAbierto();
+                await DisplayAlert("Error", $"Ocurrió un error: {ex.Message}", "OK");
             }
         }
 
-        public async void TipoSucursal()
+        public async Task TipoSucursal()
         {
             string query = "SELECT NombreSucursal, Rotulacion FROM sucursales_creditos WHERE TipoSucursal = 1";
 
@@ -110,28 +141,25 @@ namespace AppBodegona.Views
                                 // Imprimir el valor de tipoSucursalStr para depuración
                                 System.Diagnostics.Debug.WriteLine($"Rotulacion: {tipoSucursalStr}");
 
-                                // Verificar si tipoSucursalStr no es nulo o vacío
                                 if (string.IsNullOrWhiteSpace(tipoSucursalStr))
                                 {
+                                    await CerrarPopupSiEstaAbierto();
                                     await DisplayAlert("Error", "El campo Rotulacion está vacío.", "OK");
                                     return;
                                 }
 
-                                // Convertir Rotulacion a entero
                                 int tipoSucursal = Convert.ToInt32(tipoSucursalStr);
 
-                                // Asigna el valor a la propiedad estática
                                 GlobalValues.IDSucursal = tipoSucursal;
-
-                                // Guardar en las preferencias
                                 Preferences.Set("ID_Sucursal", tipoSucursal);
+
+                                // Ocultar spinner antes del DisplayAlert
+                                await CerrarPopupSiEstaAbierto();
 
                                 await DisplayAlert("Éxito", "Conexión exitosa a la sucursal: " + nombreSucursal, "Aceptar");
 
-                                // Navegar a la página Existencia
                                 await Shell.Current.GoToAsync("///Existencia");
 
-                                // Obtener la página Existencia actual y actualizar la imagen
                                 var existenciaPage = (Existencia)Shell.Current.CurrentPage;
                                 existenciaPage.UpdateImage();
 
@@ -143,18 +171,31 @@ namespace AppBodegona.Views
                             }
                             catch (FormatException)
                             {
+                                await CerrarPopupSiEstaAbierto();
                                 await DisplayAlert("Error", "El tipo de sucursal no es un número válido.", "OK");
                             }
                             catch (InvalidCastException)
                             {
+                                await CerrarPopupSiEstaAbierto();
+                                await DisplayAlert("Error", "Error en la conversión de tipo.", "OK");
                             }
                         }
                         else
                         {
+                            await CerrarPopupSiEstaAbierto();
                             await DisplayAlert("Alerta", "Sucursal no encontrada.", "Aceptar");
                         }
                     }
                 }
+            }
+        }
+
+        // Método helper para cerrar el popup si está abierto
+        private async Task CerrarPopupSiEstaAbierto()
+        {
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
@@ -172,6 +213,43 @@ namespace AppBodegona.Views
         private async void Back_Clicked(object sender, EventArgs e)
         {
             await Shell.Current.GoToAsync("///Existencia");
+        }
+
+        private void Text_Completed(object sender, EventArgs e)
+        {
+            // Verificar si algún campo está vacío
+            if (string.IsNullOrWhiteSpace(Server.Text))
+            {
+                Server.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Port.Text))
+            {
+                Port.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Database.Text))
+            {
+                Database.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(User.Text))
+            {
+                User.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(Pass.Text))
+            {
+                Pass.Focus();
+                return;
+            }
+
+            // Si todos los campos están llenos, ejecutar la función Guardar()
+            Guardar();
         }
     }
 }

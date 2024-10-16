@@ -36,7 +36,7 @@
                                MaxLength="14"/>
 
                         <Button x:Name="Cambio"
-                                FontFamily="fontello1"
+                                FontFamily="fontello"
                                 Text="&#xE800;"
                                 WidthRequest="40"
                                 TextColor="#FFF"
@@ -46,7 +46,7 @@
                                 Clicked="Cambio_Clicked"/>
 
                         <Button x:Name="Escanear"
-                                FontFamily="fontello1"
+                                FontFamily="fontello"
                                 Text="&#xE801;"
                                 WidthRequest="40"
                                 TextColor="#FFF"
@@ -56,7 +56,7 @@
                                 Clicked="Escanear_Clicked"/>
 
                         <Button x:Name="Limpiar"
-                                FontFamily="fontello1"
+                                FontFamily="fontello"
                                 Text="&#x0033;"
                                 WidthRequest="40"
                                 TextColor="#FFF"
@@ -117,7 +117,7 @@
                                                        WidthRequest="70"/>
 
                                                 <Button x:Name="Editar"
-                                                        FontFamily="fontello1"
+                                                        FontFamily="fontello"
                                                         Text="&#xE806;"
                                                         FontSize="Caption"
                                                         HeightRequest="35"
@@ -292,7 +292,7 @@
                             </Grid.ColumnDefinitions>
                             <Button x:Name="Guardar"
                                     Grid.Column="0"
-                                    FontFamily="fontello1"
+                                    FontFamily="fontello"
                                     Text="Guardar Cambios   &#xE807;"
                                     TextColor="#FFF"
                                     FontSize="Caption"
@@ -300,8 +300,8 @@
                                     Clicked="Guardar_Clicked"/>
 
                             <Button Grid.Column="1"
-                                    FontFamily="fontello1"
-                                    Text="Cancelar  &#x0078;"
+                                    FontFamily="fontello"
+                                    Text="Cancelar  &#xE80A;"
                                     FontSize="Caption"
                                     TextColor="#FFF"
                                     BackgroundColor="#DF3068"

@@ -7,6 +7,7 @@ using AppBodegona.Services;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using Xamarin.Essentials;
+using System.Threading.Tasks;
 
 namespace AppBodegona.Views
 {
@@ -70,7 +71,14 @@ namespace AppBodegona.Views
         // Sobrescribe el método OnBackButtonPressed
         protected override bool OnBackButtonPressed()
         {
-            // Muestra un mensaje de confirmación
+            // Verificar si hay popups abiertos
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                // Deja que el popup maneje el evento
+                return base.OnBackButtonPressed();
+            }
+
+            // Si no hay popups, ejecuta la lógica personalizada para la página
             Device.BeginInvokeOnMainThread(async () =>
             {
                 bool result = await this.DisplayAlert(
@@ -86,8 +94,7 @@ namespace AppBodegona.Views
                 }
             });
 
-            // Devuelve true para indicar que hemos manejado el evento
-            // y evitar que la aplicación cierre automáticamente
+            // Indicar que hemos manejado el evento
             return true;
         }
 
@@ -156,19 +163,24 @@ namespace AppBodegona.Views
 
         private async void Buscar_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-
-            ResultadosListView.IsVisible = true;
-            Family.Clear();
+            var loadingPopup = new LoadingPopup(); // Crear la instancia del popup
 
             try
             {
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+
+                ResultadosListView.IsVisible = true;
+                Family.Clear();
+
                 if (!string.IsNullOrEmpty(cfamilia.Text))
                 {
                     string entryidText = cfamilia.Text;
-
                     string query = $"SELECT Id, Nombre FROM gruposproductos WHERE Id = '{entryidText}'";
+
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
                         connection.Open();
@@ -208,18 +220,18 @@ namespace AppBodegona.Views
                             query += " AND ";
                         }
                     }
-                    query += @"
-                        ORDER BY Id Asc";
+                    query += " ORDER BY Id Asc";
+
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
                         connection.Open();
                         using (MySqlCommand command = new MySqlCommand(query, connection))
                         {
-                            // Agregar parámetros para cada palabra de búsqueda
                             for (int i = 0; i < searchTerms.Length; i++)
                             {
                                 command.Parameters.AddWithValue($"@searchTerm{i}", "%" + searchTerms[i] + "%");
                             }
+
                             using (MySqlDataReader reader = command.ExecuteReader())
                             {
                                 Family.Clear();
@@ -249,19 +261,30 @@ namespace AppBodegona.Views
             {
                 await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
             }
+            finally
+            {
+                // Ocultar el spinner al finalizar
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
+            }
         }
 
         private async void Todo_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
-
-            ResultadosListView.IsVisible = true;
-            Img.IsVisible = false;
+            var loadingPopup = new LoadingPopup(); // Crear la instancia del popup
 
             try
             {
-                string query = "SELECT Id, Nombre FROM gruposproductos ORDER BY Id Asc ";
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+
+                ResultadosListView.IsVisible = true;
+                Img.IsVisible = false;
+
+                string query = "SELECT Id, Nombre FROM gruposproductos ORDER BY Id Asc";
+
                 using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                 {
                     connection.Open();
@@ -289,6 +312,11 @@ namespace AppBodegona.Views
             catch (Exception ex)
             {
                 await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+            }
+            finally
+            {
+                // Ocultar el spinner al finalizar
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
@@ -377,62 +405,100 @@ namespace AppBodegona.Views
             }
         }
 
-        private void EditarF_Clicked(object sender, EventArgs e)
+        private async void EditarF_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
 
-            Img.IsVisible = false;
-            VistaBusqueda.IsVisible = false;
-            VistaFamilia.IsVisible = true;
+            try
+            {
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
-            EditarFamilia(sender, e);
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+
+                // Modificar la visibilidad de los elementos
+                Img.IsVisible = false;
+                VistaBusqueda.IsVisible = false;
+                VistaFamilia.IsVisible = true;
+
+                // Llamar a la función EditarFamilia (asegúrate de que esta función sea válida)
+                EditarFamilia(sender, e);
+            }
+            catch (Exception ex)
+            {
+                // Mostrar un mensaje en caso de error
+                await Application.Current.MainPage.DisplayAlert("Error", $"Se produjo un error: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ocultar el spinner al finalizar la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
+            }
         }
 
         private async void EliminarF_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
 
-            if (sender is Button button && button.BindingContext is Producto producto)
+            try
             {
-                string upc = producto.Upc;
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
 
-                var productoFiltrado = Productos.FirstOrDefault(p => p.Upc == upc);
-                if (productoFiltrado != null)
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
+
+                if (sender is Button button && button.BindingContext is Producto producto)
                 {
-                    bool continueWithNegativeMargins = await DisplayAlert("Advertencia", "¿Desea eliminar el producto de la familia?", "Sí", "No");
-                    if (!continueWithNegativeMargins)
-                    {
-                        return;
-                    }
+                    string upc = producto.Upc;
+                    var productoFiltrado = Productos.FirstOrDefault(p => p.Upc == upc);
 
-                    try
+                    if (productoFiltrado != null)
                     {
-                        string query = $"UPDATE productos SET GruposProductosId = '0' WHERE Upc = '{upc}'";
-                        using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
+                        bool continueWithNegativeMargins = await DisplayAlert("Advertencia", "¿Desea eliminar el producto de la familia?", "Sí", "No");
+
+                        if (!continueWithNegativeMargins)
+                            return;
+
+                        try
                         {
-                            connection.Open();
-                            using (MySqlCommand command = new MySqlCommand(query, connection))
+                            string query = $"UPDATE productos SET GruposProductosId = '0' WHERE Upc = '{upc}'";
+
+                            using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                             {
-                                int result = command.ExecuteNonQuery();
-                                if (result > 0)
+                                connection.Open();
+                                using (MySqlCommand command = new MySqlCommand(query, connection))
                                 {
-                                    Productos.Remove(productoFiltrado);
-                                    await DisplayAlert("Éxito", "Producto eliminado correctamente", "OK");
-                                }
-                                else
-                                {
-                                    await DisplayAlert("Error", "No se pudo eliminar el producto", "OK");
+                                    int result = command.ExecuteNonQuery();
+
+                                    if (result > 0)
+                                    {
+                                        Productos.Remove(productoFiltrado);
+                                        await DisplayAlert("Éxito", "Producto eliminado correctamente", "OK");
+                                    }
+                                    else
+                                    {
+                                        await DisplayAlert("Error", "No se pudo eliminar el producto", "OK");
+                                    }
                                 }
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+                        catch (Exception ex)
+                        {
+                            await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"Se produjo un error inesperado: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ocultar el spinner al finalizar la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 
@@ -482,8 +548,13 @@ namespace AppBodegona.Views
 
         private async void BuscarProduc(object sender, EventArgs e)
         {
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
+
             try
             {
+                // Mostrar el spinner al inicio
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
                 if (!string.IsNullOrEmpty(upcproduc.Text))
                 {
                     Img.IsVisible = false;
@@ -535,13 +606,13 @@ namespace AppBodegona.Views
                     }
                     query += "GruposProductosId = '0'"; // Solo mostrar productos que no están en ninguna familia
                     query += @"
-                ORDER BY 
-                    CASE 
-                        WHEN Existencia > 0 THEN 1
-                        WHEN Existencia = 0 THEN 2
-                        ELSE 3
-                    END, 
-                    Existencia DESC";
+            ORDER BY 
+                CASE 
+                    WHEN Existencia > 0 THEN 1
+                    WHEN Existencia = 0 THEN 2
+                    ELSE 3
+                END, 
+                Existencia DESC";
 
                     using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                     {
@@ -552,6 +623,7 @@ namespace AppBodegona.Views
                             {
                                 command.Parameters.AddWithValue($"@searchTerm{i}", "%" + searchTerms[i] + "%");
                             }
+
                             using (MySqlDataReader reader = command.ExecuteReader())
                             {
                                 ProductosFamilia.Clear();
@@ -580,10 +652,14 @@ namespace AppBodegona.Views
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+                await DisplayAlert("Error de Conexión", $"Error al intentar conectar a la base de datos: {ex.Message}", "OK");
+            }
+            finally
+            {
+                // Ocultar el spinner al finalizar la operación
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
-
 
 
         private void BuscarProduc_Clicked(object sender, EventArgs e)
@@ -653,48 +729,66 @@ namespace AppBodegona.Views
 
         private async void AgregarFamilia_Clicked(object sender, EventArgs e)
         {
-            AppShell appShell = (AppShell)Application.Current.MainPage;
-            appShell.ResetInactivityTimer();
+            var loadingPopup = new LoadingPopup(); // Crear el popup del spinner
 
-            if (sender is Button button && button.BindingContext is ProductoFamilia productoFamilia)
+            try
             {
-                string upc = productoFamilia.Upc;
-                string familiaId = codigof.Text;
-
-                var productoFamiliaFiltrado = ProductosFamilia.FirstOrDefault(p => p.Upc == upc);
-                if (productoFamiliaFiltrado != null)
+                // Mostrar el spinner al inicio si no está ya abierto
+                if (!Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Contains(loadingPopup))
                 {
-                    bool continueWithNegativeMargins = await DisplayAlert("Confirmar", $"¿Desea agregar el producto a la familia?\n\nUPC: {upc}\nDescripción: {productoFamiliaFiltrado.DescLarga}",
-                    "Sí", "No");
-                    if (!continueWithNegativeMargins)
-                    {
-                        return;
-                    }
+                    await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+                }
 
-                    string updateProductValuesQuery = @"
-                    UPDATE productos 
-                    SET 
-                        Costo = @Costo, 
-                        Precio = @PrecioNormal, 
-                        Nivel1 = @Nivel1, 
-                        PrecioMaxNivel1 = @PrecioMaxNivel1, 
-                        Nivel2 = @Nivel2, 
-                        PrecioMaxNivel2 = @PrecioMaxNivel2 
-                    WHERE Upc = @Upc";
-                    string insertHistorialQuery = @"
-                    INSERT INTO historialcambios (IdUsuarios, Usuario, Fecha, FechaHora, Upc, TipoCambio, DoubleAnt, DoubleAct) 
-                    VALUES (@IdUsuario, @Usuario, @Fecha, @FechaHora, @Upc, @TipoCambio, @DoubleAnt, @DoubleAct)";
-                    string updateProductQuery = $"UPDATE productos SET GruposProductosId = @FamiliaId WHERE Upc = @Upc";
-                    string productoQuery = $"SELECT Precio, Costo, Nivel1, PrecioMaxNivel1, Nivel2, PrecioMaxNivel2, Nivel3, PrecioMaxNivel3 FROM productos WHERE Upc = @Upc";
-                    string familiaQuery = $"SELECT PrecioNormal, Costo, Nivel1, PrecioMaxNivel1, Nivel2, PrecioMaxNivel2, Nivel3, PrecioMaxNivel3 FROM gruposproductos WHERE ID = @FamiliaId";
+                AppShell appShell = (AppShell)Application.Current.MainPage;
+                appShell.ResetInactivityTimer();
 
-                    try
+                if (sender is Button button && button.BindingContext is ProductoFamilia productoFamilia)
+                {
+                    string upc = productoFamilia.Upc;
+                    string familiaId = codigof.Text;
+
+                    var productoFamiliaFiltrado = ProductosFamilia.FirstOrDefault(p => p.Upc == upc);
+                    if (productoFamiliaFiltrado != null)
                     {
+                        // Ocultar spinner antes del DisplayAlert
+                        await CerrarPopupSiEstaAbierto();
+
+                        bool continueWithNegativeMargins = await DisplayAlert(
+                            "Confirmar",
+                            $"¿Desea agregar el producto a la familia?\n\nUPC: {upc}\nDescripción: {productoFamiliaFiltrado.DescLarga}",
+                            "Sí", "No");
+
+                        if (!continueWithNegativeMargins)
+                        {
+                            return;
+                        }
+
+                        // Volver a mostrar el spinner para la operación
+                        await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PushAsync(loadingPopup);
+
+                        string updateProductValuesQuery = @"
+                                                            UPDATE productos 
+                                                            SET 
+                                                                Costo = @Costo, 
+                                                                Precio = @PrecioNormal, 
+                                                                Nivel1 = @Nivel1, 
+                                                                PrecioMaxNivel1 = @PrecioMaxNivel1, 
+                                                                Nivel2 = @Nivel2, 
+                                                                PrecioMaxNivel2 = @PrecioMaxNivel2 
+                                                            WHERE Upc = @Upc";
+
+                        string insertHistorialQuery = @"
+                                                        INSERT INTO historialcambios (IdUsuarios, Usuario, Fecha, FechaHora, Upc, TipoCambio, DoubleAnt, DoubleAct) 
+                                                        VALUES (@IdUsuario, @Usuario, @Fecha, @FechaHora, @Upc, @TipoCambio, @DoubleAnt, @DoubleAct)";
+
+                        string updateProductQuery = $"UPDATE productos SET GruposProductosId = @FamiliaId WHERE Upc = @Upc";
+                        string productoQuery = $"SELECT Precio, Costo, Nivel1, PrecioMaxNivel1, Nivel2, PrecioMaxNivel2, Nivel3, PrecioMaxNivel3 FROM productos WHERE Upc = @Upc";
+                        string familiaQuery = $"SELECT PrecioNormal, Costo, Nivel1, PrecioMaxNivel1, Nivel2, PrecioMaxNivel2, Nivel3, PrecioMaxNivel3 FROM gruposproductos WHERE ID = @FamiliaId";
+
                         using (MySqlConnection connection = new MySqlConnection(DatabaseConnection.ConnectionString))
                         {
                             connection.Open();
 
-                            // Iniciar una transacción para asegurar la consistencia de las operaciones
                             using (MySqlTransaction transaction = connection.BeginTransaction())
                             {
                                 try
@@ -741,35 +835,27 @@ namespace AppBodegona.Views
                                         }
                                     }
 
-                                    // Comparar datos y registrar cambios
+                                    // Comparar y registrar cambios
                                     var diferencias = new List<(int TipoCambio, double ValorAnterior, double ValorNuevo)>();
-
                                     if (productoDatos["Costo"] != familiaDatos["Costo"])
-                                    {
                                         diferencias.Add((12, productoDatos["Costo"], familiaDatos["Costo"]));
-                                    }
-                                    if (productoDatos["Precio"] != familiaDatos["PrecioNormal"])
-                                    {
-                                        diferencias.Add((13, productoDatos["Precio"], familiaDatos["PrecioNormal"]));
-                                    }
-                                    if (productoDatos["Nivel1"] != familiaDatos["Nivel1"])
-                                    {
-                                        diferencias.Add((14, productoDatos["Nivel1"], familiaDatos["Nivel1"]));
-                                    }
-                                    if (productoDatos["PrecioMaxNivel1"] != familiaDatos["PrecioMaxNivel1"])
-                                    {
-                                        diferencias.Add((15, productoDatos["PrecioMaxNivel1"], familiaDatos["PrecioMaxNivel1"]));
-                                    }
-                                    if (productoDatos["Nivel2"] != familiaDatos["Nivel2"])
-                                    {
-                                        diferencias.Add((16, productoDatos["Nivel2"], familiaDatos["Nivel2"]));
-                                    }
-                                    if (productoDatos["PrecioMaxNivel2"] != familiaDatos["PrecioMaxNivel2"])
-                                    {
-                                        diferencias.Add((17, productoDatos["PrecioMaxNivel2"], familiaDatos["PrecioMaxNivel2"]));
-                                    }
 
-                                    // Actualizar el producto con los valores de la familia
+                                    if (productoDatos["Precio"] != familiaDatos["PrecioNormal"])
+                                        diferencias.Add((13, productoDatos["Precio"], familiaDatos["PrecioNormal"]));
+
+                                    if (productoDatos["Nivel1"] != familiaDatos["Nivel1"])
+                                        diferencias.Add((14, productoDatos["Nivel1"], familiaDatos["Nivel1"]));
+
+                                    if (productoDatos["PrecioMaxNivel1"] != familiaDatos["PrecioMaxNivel1"])
+                                        diferencias.Add((15, productoDatos["PrecioMaxNivel1"], familiaDatos["PrecioMaxNivel1"]));
+
+                                    if (productoDatos["Nivel2"] != familiaDatos["Nivel2"])
+                                        diferencias.Add((16, productoDatos["Nivel2"], familiaDatos["Nivel2"]));
+
+                                    if (productoDatos["PrecioMaxNivel2"] != familiaDatos["PrecioMaxNivel2"])
+                                        diferencias.Add((17, productoDatos["PrecioMaxNivel2"], familiaDatos["PrecioMaxNivel2"]));
+
+                                    // Actualizar producto
                                     using (MySqlCommand updateValuesCommand = new MySqlCommand(updateProductValuesQuery, connection, transaction))
                                     {
                                         updateValuesCommand.Parameters.AddWithValue("@Costo", familiaDatos["Costo"]);
@@ -781,6 +867,7 @@ namespace AppBodegona.Views
                                         updateValuesCommand.Parameters.AddWithValue("@Upc", upc);
                                         updateValuesCommand.ExecuteNonQuery();
                                     }
+
 
                                     // Insertar los cambios en la tabla historialcambios
                                     foreach (var (TipoCambio, ValorAnterior, ValorNuevo) in diferencias)
@@ -815,30 +902,38 @@ namespace AppBodegona.Views
                                         Costo = familiaDatos["Costo"].ToString("F2") // Mostrar el costo con 2 decimales
                                     });
 
-                                    // Confirmar la transacción
                                     transaction.Commit();
 
-                                    // Ocultar VistaAgregarProducto y mostrar VistaFamilia
                                     VistaAgregarProducto.IsVisible = false;
                                     VistaFamilia.IsVisible = true;
 
-                                    // Mostrar mensaje de éxito
+                                    await CerrarPopupSiEstaAbierto();
                                     await DisplayAlert("Éxito", "Producto agregado a la familia.", "OK");
                                 }
                                 catch (Exception ex)
                                 {
-                                    // Revertir la transacción en caso de error
                                     transaction.Rollback();
-                                    await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
+                                    await CerrarPopupSiEstaAbierto();
+                                    await DisplayAlert("Error", $"Error: {ex.Message}", "OK");
                                 }
                             }
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        await DisplayAlert("Error de Conexión", "Error al intentar conectar a la base de datos: " + ex.Message, "OK");
-                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                await CerrarPopupSiEstaAbierto();
+                await DisplayAlert("Error", $"Error: {ex.Message}", "OK");
+            }
+        }
+
+        // Helper para cerrar popup
+        private async Task CerrarPopupSiEstaAbierto()
+        {
+            if (Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Count > 0)
+            {
+                await Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopAsync();
             }
         }
 

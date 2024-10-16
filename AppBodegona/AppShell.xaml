@@ -83,7 +83,7 @@
                        Grid.Column="0" 
                        Margin="20,-10"/>
 
-                <Button FontFamily="fontello1"
+                <Button FontFamily="fontello"
                         Text="&#xE805;" 
                         Grid.Column="1"
                         FontSize="Medium"
@@ -94,15 +94,15 @@
         </StackLayout>
     </Shell.FlyoutHeader>
 
-    <FlyoutItem x:Name="ExistenciaItem" Title="Consulta de Existencias" Icon="icon_about.png">
+    <FlyoutItem x:Name="ExistenciaItem" Title="Consulta de Existencias" Icon="icon_inventario.png">
         <ShellContent Route="Existencia" ContentTemplate="{DataTemplate local:Existencia}" />
     </FlyoutItem>
 
-    <FlyoutItem x:Name="PrecioItem" Title="Modificacion de Precio" Icon="icon_about.png">
+    <FlyoutItem x:Name="PrecioItem" Title="Modificacion de Precio" Icon="icon_cambio.png">
         <ShellContent Route="Precio" ContentTemplate="{DataTemplate local:Precio}" />
     </FlyoutItem>
 
-    <FlyoutItem x:Name="FamiliaItem" Title="Modificacion de Familias" Icon="icon_about.png">
+    <FlyoutItem x:Name="FamiliaItem" Title="Modificacion de Familias" Icon="icon_editar.png">
         <ShellContent Route="Familias" ContentTemplate="{DataTemplate local:Familias}" />
     </FlyoutItem>
 

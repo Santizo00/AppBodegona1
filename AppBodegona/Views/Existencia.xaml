@@ -37,7 +37,7 @@
                            MaxLength="14"/>
 
                     <Button x:Name="Cambio"
-                            FontFamily="fontello1"
+                            FontFamily="fontello"
                             Text="&#xE800;"
                             WidthRequest="45"
                             TextColor="#FFF"
@@ -46,7 +46,7 @@
                             Clicked="Cambio_Clicked"
                             HorizontalOptions="End"/>
 
-                    <Button FontFamily="fontello1"
+                    <Button FontFamily="fontello"
                             Text="&#xE801;"
                             TextColor="#FFF"
                             BackgroundColor="#00A6BD"
@@ -56,7 +56,7 @@
                             HorizontalOptions="Center" 
                             Clicked="EscanearUPC_Clicled"/>
 
-                    <Button FontFamily="fontello1"
+                    <Button FontFamily="fontello"
                             Text="&#x0033;"
                             WidthRequest="40"
                             TextColor="#FFF"
@@ -257,7 +257,8 @@
 
                 <StackLayout  x:Name="VF" >
                     <Grid Margin="20,0,20,0">
-                        <Button Text="Regresar"
+                        <Button Text="Regresar   &#xE805;"
+                                FontFamily="fontello"
                                 FontSize="Caption"
                                 Grid.Column="0"
                                 BackgroundColor="#DF3068"
@@ -272,7 +273,8 @@
                 </StackLayout>
                 <Button x:Name="Regresar"
                         Margin="20,0,20,0" 
-                        Text="Regresar"
+                        Text="Regresar   &#xE805;"
+                        FontFamily="fontello"
                         FontSize="Caption"
                         Grid.Column="0"
                         BackgroundColor="#DF3068"

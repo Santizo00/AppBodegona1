@@ -38,9 +38,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Button x:Name="Cancelar" 
-                        FontFamily="fontello1"
+                        FontFamily="fontello"
                         FontSize="Small"
-                        Text="Cancelar   &#xE802;" 
+                        Text="Cancelar   &#xE805;" 
                         TextColor="#FFF"
                         BackgroundColor="#DF3068"
                         Grid.Column="0"
@@ -49,7 +49,7 @@
                         Clicked="Cancelar_Clicked"/>
 
                 <Button x:Name="Ingresar" 
-                        FontFamily="fontello1"
+                        FontFamily="fontello"
                         FontSize="Small"
                         Text="Ingresar   &#xE804;" 
                         TextColor="#FFF"
