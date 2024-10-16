@@ -1,0 +1,410 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AppBodegona.Views.Familias"
+             Title="Modificacion de Familias"
+             BackgroundColor="#2B2B2B">
+    <ContentPage.Content>
+        <ContentView x:Name="MainContentView">
+            <StackLayout>
+                <StackLayout x:Name="VistaBusqueda" IsVisible="true">
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="CenterAndExpand" Margin="0, 10">
+                        <Entry x:Name="nfamilia"
+                               Placeholder="Ingrese nombre de familia"
+                               TextColor="#fff"
+                               PlaceholderColor="#FFF"
+                               FontSize="Body"
+                               IsVisible="true"
+                               Completed="Buscar_Clicked"
+                               Focused="Button_Focused"
+                               WidthRequest="200"
+                               HorizontalOptions="Start"
+                               TextChanged="Reset_TextChanged"/>
+
+                        <Entry x:Name="cfamilia"
+                               Placeholder="Ingrese codigo de familia"
+                               TextColor="#fff"
+                               PlaceholderColor="#FFF"
+                               Keyboard="Numeric"
+                               FontSize="Body"
+                               Completed="Buscar_Clicked"
+                               IsVisible="false"
+                               Focused="Button_Focused"
+                               WidthRequest="200"
+                               HorizontalOptions="Start"
+                               TextChanged="Reset_TextChanged"
+                               MaxLength="4"/>
+
+                        <Button x:Name="Cambio"
+                                FontFamily="fontello1"
+                                Text="&#xE800;"
+                                WidthRequest="40"
+                                TextColor="#FFF"
+                                BackgroundColor="#00A6BD"
+                                FontSize="Body"
+                                HorizontalOptions="End"
+                                Clicked="Cambio_Clicked"/>
+
+                        <Button x:Name="Escanear"
+                                FontFamily="fontello1"
+                                Text="&#xE803;"
+                                TextColor="#FFF"
+                                BackgroundColor="#00A6BD"
+                                WidthRequest="40"
+                                FontSize="Body"
+                                HorizontalOptions="End"
+                                Clicked="Buscar_Clicked"/>
+
+                        <Button x:Name="Limpiar"
+                                FontFamily="fontello1"
+                                Text="&#x0033;"
+                                WidthRequest="40"
+                                TextColor="#FFF"
+                                BackgroundColor="#DF3068"
+                                FontSize="Body"
+                                HorizontalOptions="End"
+                                Clicked="Limpiar_Clicked"/>
+                    </StackLayout>
+                    <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                    <Button x:Name="Todo"
+                            FontFamily="fontello"
+                            Text="Ver todas las familias   &#x0039;"
+                            FontSize="Caption"
+                            Margin="10,0"
+                            TextColor="#FFF"
+                            BackgroundColor="#00A6BD"
+                            Clicked="Todo_Clicked"/>
+
+                    <StackLayout>
+                        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                        <StackLayout Orientation="Horizontal" Padding="15,0">
+                            <Label Text="Codigo" 
+                               TextColor="White"
+                               VerticalTextAlignment="Center"
+                               WidthRequest="70"/>
+
+                            <Label Text="Descripción" 
+                               VerticalTextAlignment="Center"
+                               TextColor="White"
+                               WidthRequest="290"/>
+
+                        </StackLayout>
+                        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                        <ListView x:Name="ResultadosListView" HasUnevenRows="True" IsVisible="false">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <ViewCell>
+                                        <StackLayout>
+                                            <StackLayout Orientation="Horizontal" Padding="15,0">
+                                                <Label Text="{Binding Codigo}" 
+                                                   VerticalTextAlignment="Center"
+                                                   HorizontalTextAlignment="Center"
+                                                   FontSize="Caption"
+                                                   TextColor="White"
+                                                   WidthRequest="90"/>
+
+                                                <Label Text="{Binding Nombre}" 
+                                                   VerticalTextAlignment="Center"
+                                                   TextColor="White"
+                                                   FontSize="Caption"
+                                                   WidthRequest="250"/>
+
+                                                <Button x:Name="EditarF"
+                                                    FontFamily="fontello1"
+                                                    Text="Editar  &#xE806;"
+                                                    FontSize="Caption"
+                                                    HeightRequest="35"
+                                                    TextColor="#FFF"
+                                                    BackgroundColor="#00A6BD"
+                                                    HorizontalOptions="Center" 
+                                                    VerticalOptions="Center" 
+                                                    WidthRequest="80"
+                                                    Clicked="EditarF_Clicked"/>
+                                            </StackLayout>
+                                            <BoxView x:Name="Division" HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                                        </StackLayout>
+                                    </ViewCell>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackLayout>
+                </StackLayout>
+
+                <StackLayout x:Name ="VistaFamilia" IsVisible="false" Margin="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Label Text="Codigo de Familia:" Grid.Column="0" Grid.Row="0" FontSize="Body" VerticalOptions="Center" TextColor="#FFF"/>
+                        <Entry x:Name="codigof"
+                               TextColor="#fff"
+                               PlaceholderColor="#FFF"
+                               Grid.Column="1"
+                               Grid.Row="0"
+                               IsReadOnly="True"
+                               FontSize="Body"/>
+
+                        <Label Text="Descripcion Familia:" Grid.Column="0" Grid.Row="1" FontSize="Body" VerticalOptions="Center" TextColor="#FFF"/>
+                        <Entry x:Name="descf"
+                               TextColor="#fff"
+                               PlaceholderColor="#FFF"
+                               Grid.Column="1"
+                               Grid.Row="1"
+                               IsReadOnly="True"
+                               FontSize="Body"/>
+                    </Grid>
+                    <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="-20,0"/>
+                    <StackLayout Orientation="Horizontal" Padding="5,0" Margin="-20,0">
+                        <Label Text="UPC" 
+                           TextColor="White"
+                           VerticalTextAlignment="Center"
+                           FontSize="Small"
+                           WidthRequest="110"/>
+
+                        <Label Text="Descripcion" 
+                           VerticalTextAlignment="Center"
+                           FontSize="Small"
+                           TextColor="White"
+                           WidthRequest="180"/>
+
+                        <Label Text="Costo" 
+                           VerticalTextAlignment="Center"
+                           FontSize="Small"
+                           TextColor="White"
+                           WidthRequest="120"/>
+                    </StackLayout>
+
+                    <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="-20,0"/>
+
+                    <ListView x:Name="FamiliaListView" HasUnevenRows="True" IsVisible="true" Margin="-20,0">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <ViewCell>
+                                    <StackLayout>
+                                        <StackLayout Orientation="Horizontal" Padding="5,0">
+                                            <Label Text="{Binding Upc}" 
+                                               VerticalTextAlignment="Center"
+                                               HorizontalTextAlignment="Center"
+                                               TextColor="White"
+                                               FontSize="Caption"
+                                               WidthRequest="110"/>
+
+                                            <Label Text="{Binding DescLarga}" 
+                                               VerticalTextAlignment="Center"
+                                               TextColor="White"
+                                               FontSize="Caption"
+                                               WidthRequest="180"/>
+
+                                            <Label Text="{Binding Costo}" 
+                                               VerticalTextAlignment="Center"
+                                               TextColor="White"
+                                               WidthRequest="60"/>
+
+                                            <Button x:Name="EliminarF"
+                                                FontFamily="fontello1"
+                                                Text="&#xF146;"
+                                                FontSize="Small"
+                                                HeightRequest="35"    
+                                                TextColor="#FFF"
+                                                BackgroundColor="#00A6BD"
+                                                HorizontalOptions="Center" 
+                                                VerticalOptions="Center" 
+                                                WidthRequest="40"
+                                                Clicked="EliminarF_Clicked"/>
+                                        </StackLayout>
+                                        <BoxView x:Name="Division" HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                                    </StackLayout>
+                                </ViewCell>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <Grid HorizontalOptions="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Button x:Name="Agregar"
+                            FontFamily="fontello1"
+                            Text="Agregar  &#xF0FE;"
+                            TextColor="#FFF"
+                            FontSize="Caption"
+                            BackgroundColor="#00A6BD"
+                            Grid.Column="0" 
+                            Grid.Row="0" 
+                            VerticalOptions="Center" 
+                            HorizontalOptions="CenterAndExpand" 
+                            WidthRequest="160"
+                            Clicked="Agregar_Clicked"/>
+
+                        <Button x:Name="Regresar"
+                            FontFamily="fontello1"
+                            Text="Regresar  &#x0078;"
+                            TextColor="#FFF"
+                            FontSize="Caption"
+                            BackgroundColor="#DF3068"
+                            Grid.Column="1" 
+                            Grid.Row="0" 
+                            VerticalOptions="Center" 
+                            HorizontalOptions="CenterAndExpand" 
+                            WidthRequest="160"
+                            Clicked="Regresar_Clicked"/>
+                    </Grid>
+                </StackLayout>
+
+                <StackLayout x:Name="VistaAgregarProducto" IsVisible="false">
+                    <Button x:Name="Volver"
+                        FontFamily="fontello1"
+                        Text="Regresar a la familia  "
+                        Margin="0,0"
+                        FontSize="Caption"
+                        TextColor="#FFF"
+                        BackgroundColor="#DF3068"
+                        Clicked="Volver_Clicked"/>
+                    <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0" />
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="CenterAndExpand" Margin="0, 10">
+
+                        <Entry x:Name="descproduc"
+                               Placeholder="Ingrese la descripcion"
+                               Completed="BuscarProduc_Clicked"
+                               TextColor="#FFF"
+                               PlaceholderColor="#FFF"
+                               IsVisible="true"
+                               FontSize="Body"
+                               Focused="Button_Focused"
+                               WidthRequest="200"
+                               HorizontalOptions="Start"
+                               TextChanged="Reset_TextChanged"/>
+
+                        <Entry x:Name="upcproduc"
+                               Placeholder="UPC (Barra Producto)"
+                               TextColor="#FFF"
+                               PlaceholderColor="#FFF"
+                               Keyboard="Numeric"
+                               IsVisible="false"
+                               Completed="BuscarProduc_Clicked"
+                               Grid.Column="0"
+                               FontSize="Body"
+                               Focused="Button_Focused"
+                               WidthRequest="200"
+                               HorizontalOptions="Start"
+                               TextChanged="Reset_TextChanged"
+                               MaxLength="14"/>
+
+                        <Button x:Name="Cambio1"
+                                FontFamily="fontello1"
+                                Text="&#xE800;"
+                                WidthRequest="40"
+                                TextColor="#FFF"
+                                BackgroundColor="#00A6BD"
+                                Grid.Column="1"
+                                FontSize="Body"
+                                HorizontalOptions="End"
+                                Clicked="CambioTextProduc_Clicked"/>
+
+                        <Button x:Name="EscanearProducto"
+                                FontFamily="fontello1"
+                                Text="&#xE801;"
+                                TextColor="#FFF"
+                                BackgroundColor="#00A6BD"
+                                WidthRequest="40"
+                                Grid.Column="2"
+                                FontSize="Body" 
+                                HorizontalOptions="End"
+                                Clicked="EscanearProducto_Clicked"/>
+
+                        <Button FontFamily="fontello1"
+                                Text="&#x0033;"
+                                WidthRequest="40"
+                                TextColor="#FFF"
+                                BackgroundColor="#DF3068"
+                                Grid.Column="3"
+                                FontSize="Body"
+                                HorizontalOptions="End"
+                                Clicked="LimpiarProduc_Clicked"/>
+                    </StackLayout>
+                    <StackLayout>
+                        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                        <StackLayout Orientation="Horizontal" Padding="5,0">
+                            <Label Text="UPC" 
+                               TextColor="White"
+                               Grid.Column="0"
+                               VerticalTextAlignment="Center"
+                               WidthRequest="110"/>
+
+                            <Label Text="Descripción" 
+                               VerticalTextAlignment="Center"
+                               TextColor="White"
+                               Grid.Column="1"
+                               WidthRequest="120"/>
+
+                            <Label Text="Existencia" 
+                               VerticalTextAlignment="Center"
+                               HorizontalTextAlignment="Center"
+                               TextColor="White"
+                               Grid.Column="2"
+                               WidthRequest="200"/>
+
+                        </StackLayout>
+                        <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                        <ListView x:Name="ProductoListView" HasUnevenRows="True" IsVisible="true">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <ViewCell>
+                                        <StackLayout>
+                                            <StackLayout Orientation="Horizontal" Padding="5,0">
+                                                <Label Text="{Binding Upc}" 
+                                                   VerticalTextAlignment="Center"
+                                                   TextColor="White"
+                                                   FontSize="Caption"
+                                                   WidthRequest="110"/>
+
+                                                <Label Text="{Binding DescLarga}" 
+                                                   VerticalTextAlignment="Center"
+                                                   TextColor="White"
+                                                   FontSize="Caption"
+                                                   WidthRequest="180"/>
+
+                                                <Label Text="{Binding Existencia}" 
+                                                   VerticalTextAlignment="Center"
+                                                   HorizontalTextAlignment="Center" 
+                                                   TextColor="White"
+                                                   FontSize="Caption"
+                                                   WidthRequest="60"/>
+
+                                                <Button FontFamily="fontello1"
+                                                    Text="&#xF0FE;"
+                                                    FontSize="Small"
+                                                    HeightRequest="40"
+                                                    TextColor="#FFF"
+                                                    BackgroundColor="#00A6BD"
+                                                    HorizontalOptions="Center" 
+                                                    VerticalOptions="Center" 
+                                                    WidthRequest="40"
+                                                    Clicked="AgregarFamilia_Clicked"/>
+
+                                            </StackLayout>
+                                            <BoxView HeightRequest="1" Color="White" HorizontalOptions="FillAndExpand" Margin="0,0,0,0"/>
+                                        </StackLayout>
+                                    </ViewCell>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackLayout>
+                </StackLayout>
+                <StackLayout IsVisible="True">
+                    <Image x:Name="Img" HorizontalOptions="CenterAndExpand"  VerticalOptions="CenterAndExpand" Margin="0,150"/>
+                </StackLayout>
+            </StackLayout>
+        </ContentView>
+    </ContentPage.Content>
+</ContentPage>

@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AppBodegona.Views.Login"
+             Title="Login"
+             BackgroundColor="#2B2B2B"
+             Shell.NavBarIsVisible="False">
+    <ContentPage.Content>
+
+        <StackLayout VerticalOptions="Center" HorizontalOptions="CenterAndExpand">
+            <Image Source="Login" HorizontalOptions="Center" WidthRequest="200" HeightRequest="200" />
+            <Entry x:Name="Usuario" 
+                   HorizontalOptions="Center"
+                   WidthRequest="300" 
+                   FontSize="Body"
+                   TextColor="#fff"
+                   PlaceholderColor="#FFF"
+                   Placeholder="Ingrese su usuario!"
+                   HorizontalTextAlignment="Center"
+                   Focused="Button_Focused"
+                   Completed="Usuario_Completed"/>
+
+            <Entry x:Name="Contraseña"
+                   HorizontalOptions="Center"
+                   WidthRequest="300" 
+                   TextColor="#fff"
+                   PlaceholderColor="#FFF"
+                   IsPassword="True"
+                   FontSize="Body"
+                   Placeholder="Ingrese su contrsaeña!"
+                   HorizontalTextAlignment="Center"
+                   HeightRequest="50"
+                   Focused="Button_Focused"
+                   Completed="Contraseña_Completed"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="Cancelar" 
+                        FontFamily="fontello1"
+                        FontSize="Small"
+                        Text="Cancelar   &#xE802;" 
+                        TextColor="#FFF"
+                        BackgroundColor="#DF3068"
+                        Grid.Column="0"
+                        WidthRequest="160"
+                        HorizontalOptions="Center"
+                        Clicked="Cancelar_Clicked"/>
+
+                <Button x:Name="Ingresar" 
+                        FontFamily="fontello1"
+                        FontSize="Small"
+                        Text="Ingresar   &#xE804;" 
+                        TextColor="#FFF"
+                        BackgroundColor="#00A6BD"
+                        Grid.Column="1"
+                        WidthRequest="160"
+                        HorizontalOptions="Center"
+                        Clicked="OnIngresarClicked"/>
+            </Grid>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

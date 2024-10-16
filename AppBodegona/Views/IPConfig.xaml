@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AppBodegona.Views.IPConfig"
+             Title="Configuracion de Conexion"
+             BackgroundColor="#2B2B2B"
+             Shell.NavBarIsVisible="False">
+    <ContentPage.Content>
+        <StackLayout HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand">
+            <Grid Margin="20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>
+                </Grid.RowDefinitions>
+                <Entry x:Name="Server"
+                       FontSize="Body"
+                       Placeholder="Ingrese la IP a conectar!"
+                       PlaceholderColor="#FFF"
+                       TextColor="#FFF"
+                       Grid.Column="1"
+                       Grid.Row="0"/>
+
+                <Entry x:Name="Port"
+                       Margin="0,10"
+                       FontSize="Body"
+                       Placeholder="Ingrese el puerto!"
+                       PlaceholderColor="#FFF"
+                       TextColor="#FFF"
+                       Grid.Column="1"
+                       Grid.Row="1"/>
+
+                <Entry x:Name="Database"
+                       Margin="0,10"
+                       FontSize="Body"
+                       Placeholder="Ingrese el nombre de la base de datos!"
+                       PlaceholderColor="#FFF"
+                       TextColor="#FFF"
+                       Grid.Column="1"
+                       Grid.Row="2"/>
+
+                <Entry x:Name="User"
+                       Margin="0,10"
+                       FontSize="Body"
+                       Placeholder="Ingrese el usuario!"
+                       PlaceholderColor="#FFF"
+                       TextColor="#FFF"
+                       Grid.Column="1"
+                       Grid.Row="3"/>
+
+                <Entry x:Name="Pass"
+                       Margin="0,10"
+                       FontSize="Body"
+                       Placeholder="Ingrese la contraseña!"
+                       PlaceholderColor="#FFF"
+                       IsPassword="True"
+                       TextColor="#FFF"
+                       Grid.Column="1"
+                       Grid.Row="4"/>
+            </Grid>
+            <Grid Margin="20,0,20,0">
+                <Button x:Name="Back" 
+                        FontFamily="fontello1"
+                        Text="Regresar"
+                        WidthRequest="150"
+                        Grid.Column="0"
+                        Clicked="Back_Clicked"/>
+
+                <Button x:Name="Save"
+                        FontFamily="fontello1"
+                        Text="Guardar   &#xE807;"
+                        WidthRequest="150"
+                        Grid.Column="1"
+                        Clicked="Save_Clicked"/>
+            </Grid>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>
