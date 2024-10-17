@@ -7,12 +7,14 @@ using Newtonsoft.Json.Linq;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using System.Diagnostics;
 
 namespace AppBodegona
 {
     public partial class App : Application
     {
-        private const string UpdateCheckUrl = "https://raw.githubusercontent.com/Santizo00/AppBodegona1/main/version.json"; // URL al archivo JSON con la versión
+
+        private const string UpdateCheckUrl = "https://raw.githubusercontent.com/Santizo00/AppBodegona1/master/version.json";
 
         public App()
         {
@@ -39,16 +41,28 @@ namespace AppBodegona
             }
         }
 
-        protected override void OnSleep() { }
+        protected async override void OnSleep()
+        {
+            base.OnSleep();
 
-        protected override void OnResume() { }
+            // Verificar si hay actualizaciones disponibles cada vez que la app se reanuda
+            await CheckForUpdates();
+        }
+
+        protected async override void OnResume()
+        {
+            base.OnResume();
+
+            // Verificar si hay actualizaciones disponibles cada vez que la app se reanuda
+            await CheckForUpdates();
+        }
 
         public async Task NavigateToLogin()
         {
             await MainPage.Navigation.PushAsync(new Login());
         }
 
-        private async Task CheckForUpdates()
+        public async Task CheckForUpdates()
         {
             try
             {
@@ -80,6 +94,11 @@ namespace AppBodegona
                             // Abrir el enlace de actualización en el navegador
                             await Launcher.OpenAsync(new Uri(updateUrl));
                         }
+                        else
+                        {
+                            // Si el usuario cancela, cierra la aplicación
+                            CloseApplication();
+                        }
                     }
                 }
             }
@@ -89,6 +108,13 @@ namespace AppBodegona
                 await MainPage.DisplayAlert("Error", $"Error al verificar actualizaciones: {ex.Message}", "OK");
             }
         }
+
+        // Método para cerrar la aplicación
+        private void CloseApplication()
+        {
+            System.Diagnostics.Process.GetCurrentProcess().Kill(); // Cierra la aplicación
+        }
+
 
     }
 }

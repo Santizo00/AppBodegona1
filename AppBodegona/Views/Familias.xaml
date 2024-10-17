@@ -17,7 +17,7 @@
                                IsVisible="true"
                                Completed="Buscar_Clicked"
                                Focused="Button_Focused"
-                               WidthRequest="200"
+                               WidthRequest="240"
                                HorizontalOptions="Start"
                                TextChanged="Reset_TextChanged"/>
 
@@ -30,7 +30,7 @@
                                Completed="Buscar_Clicked"
                                IsVisible="false"
                                Focused="Button_Focused"
-                               WidthRequest="200"
+                               WidthRequest="240"
                                HorizontalOptions="Start"
                                TextChanged="Reset_TextChanged"
                                MaxLength="4"/>

@@ -325,7 +325,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel1;
@@ -369,7 +369,7 @@ namespace AppBodegona.Views
                         }
                         else
                         {
-                            double fontSizeOferta = 70;
+                            double fontSizeOferta = 50;
                             Oferta.FontSize = fontSizeOferta;
 
                             Oferta.Text = $"A Partir De {nivel1}";
@@ -430,7 +430,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel1;
@@ -504,7 +504,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel2;
@@ -565,7 +565,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     double precioMitad = double.Parse(precioString) / 2;
@@ -691,7 +691,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel2;
@@ -794,7 +794,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel1;
@@ -837,7 +837,7 @@ namespace AppBodegona.Views
                         }
                         else
                         {
-                            double fontSizeOferta = 70;
+                            double fontSizeOferta = 50;
                             Oferta.FontSize = fontSizeOferta;
 
                             Oferta.Text = $"A Partir De {nivel1}";
@@ -895,7 +895,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel1;
@@ -988,7 +988,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel2;
@@ -1049,7 +1049,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     double precioMitad = double.Parse(precioFString) / 2;
@@ -1175,7 +1175,7 @@ namespace AppBodegona.Views
             {
                 if (idsursal == 4)
                 {
-                    double fontSizeOferta = 70;
+                    double fontSizeOferta = 50;
                     Oferta.FontSize = fontSizeOferta;
 
                     Oferta.Text = "A Partir De " + nivel2;

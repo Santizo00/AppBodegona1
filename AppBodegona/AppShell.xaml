@@ -106,5 +106,14 @@
         <ShellContent Route="Familias" ContentTemplate="{DataTemplate local:Familias}" />
     </FlyoutItem>
 
-
+    <!-- Footer con el logo -->
+    <Shell.FlyoutFooter>
+        <StackLayout BackgroundColor="#00A6BD" Padding="10" HorizontalOptions="Center">
+            <Image Source="Santizo" 
+                   Background="#FFF"
+                   HeightRequest="70" 
+                   WidthRequest="70" 
+                   Aspect="AspectFit" />
+        </StackLayout>
+    </Shell.FlyoutFooter>
 </Shell>
